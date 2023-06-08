@@ -4,13 +4,12 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::vec::Vec;
 
+pub use ::nom::number::complete::*;
+pub use ::nom::*;
 use binwrite::{BinWrite, WriterOption};
-pub use nom::number::complete::*;
-pub use nom::*;
-pub use nom_derive::NomLE;
-use nom_derive::Parse;
-pub use serde::{Deserialize, Deserializer, Serialize, Serializer};
+pub use nom_derive::*;
 use num_traits::{cast, NumCast};
+pub use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub trait HasReferences {
     fn hard_links(&self) -> Vec<u32>;
@@ -52,24 +51,24 @@ pub struct FixedVec<T: BinWrite, const U: usize> {
 }
 
 impl<T: BinWrite, const U: usize> Serialize for FixedVec<T, U>
-    where
-        T: Serialize,
+where
+    T: Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         self.data.serialize(serializer)
     }
 }
 
 impl<'de, T: BinWrite, const U: usize> Deserialize<'de> for FixedVec<T, U>
-    where
-        T: Deserialize<'de>,
+where
+    T: Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         let fv = FixedVec {
             data: Vec::deserialize(deserializer)?,
@@ -287,8 +286,8 @@ impl<'de> Deserialize<'de> for PascalStringNULL {
 #[derive(NomLE)]
 pub struct FixedStringNULL<const U: usize> {
     #[nom(
-    Map = "|x: &[u8]| String::from_utf8_lossy(x.split_at(x.iter().position(|&r| r == 0u8).unwrap()).0).to_string()",
-    Take = "U"
+        Map = "|x: &[u8]| String::from_utf8_lossy(x.split_at(x.iter().position(|&r| r == 0u8).unwrap()).0).to_string()",
+        Take = "U"
     )]
     data: String,
 }
@@ -302,8 +301,8 @@ impl<const U: usize> BinWrite for FixedStringNULL<U> {
 
 impl<const U: usize> Serialize for FixedStringNULL<U> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         self.data.serialize(serializer)
     }
@@ -311,15 +310,14 @@ impl<const U: usize> Serialize for FixedStringNULL<U> {
 
 impl<'de, const U: usize> Deserialize<'de> for FixedStringNULL<U> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         Ok(FixedStringNULL {
             data: String::deserialize(deserializer)?,
         })
     }
 }
-
 
 #[derive(BinWrite)]
 #[binwrite(little)]
@@ -329,12 +327,12 @@ pub struct NumeratorFloat<T: BinWrite + NumCast + Copy, const U: usize> {
 }
 
 impl<T: BinWrite + NumCast + Copy, const U: usize> Serialize for NumeratorFloat<T, U>
-    where
-        T: Serialize,
+where
+    T: Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         let converted: f32 = cast::<T, f32>(self.data).unwrap() / (U as f32);
         converted.serialize(serializer)
@@ -342,12 +340,12 @@ impl<T: BinWrite + NumCast + Copy, const U: usize> Serialize for NumeratorFloat<
 }
 
 impl<'de, T: BinWrite + NumCast + Copy, const U: usize> Deserialize<'de> for NumeratorFloat<T, U>
-    where
-        T: Deserialize<'de>,
+where
+    T: Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         let converted = f32::deserialize(deserializer)?;
         Ok(NumeratorFloat {
@@ -355,7 +353,6 @@ impl<'de, T: BinWrite + NumCast + Copy, const U: usize> Deserialize<'de> for Num
         })
     }
 }
-
 
 #[derive(BinWrite)]
 #[binwrite(little)]
@@ -366,8 +363,8 @@ pub struct VertexVectorComponent {
 
 impl Serialize for VertexVectorComponent {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         let converted: f32 = ((self.data as f32) / 255f32) * 2f32 - 1f32;
         converted.serialize(serializer)
@@ -376,8 +373,8 @@ impl Serialize for VertexVectorComponent {
 
 impl<'de> Deserialize<'de> for VertexVectorComponent {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         let converted = f32::deserialize(deserializer)?;
         Ok(VertexVectorComponent {
@@ -531,7 +528,6 @@ where
         Ok((hard_links, soft_links))
     }
 }
-
 
 #[derive(BinWrite)]
 #[binwrite(little)]

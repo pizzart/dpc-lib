@@ -1,5 +1,5 @@
 use binwrite::BinWrite;
-use nom_derive::NomLE;
+use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::fuel_fmt::common::{FUELObjectFormat, HasReferences, PascalArray, ResourceObjectZ};

@@ -1,5 +1,5 @@
 use binwrite::BinWrite;
-use nom_derive::NomLE;
+use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::fuel_fmt::common::{FUELObjectFormat, HasReferences, ResourceObjectZ, Vec2f};
@@ -81,7 +81,7 @@ impl From<GwRoadZShadow> for GwRoadZ {
             unknown5_min: shadow.unknown5_min,
             unknown5_max: shadow.unknown5_max,
             unknown5s: shadow.unknown5s,
-            unknown_crc32: shadow.unknown_crc32
+            unknown_crc32: shadow.unknown_crc32,
         }
     }
 }
@@ -93,7 +93,9 @@ impl HasReferences for GwRoadZ {
 
     fn soft_links(&self) -> Vec<u32> {
         let mut v = Vec::new();
-        if self.unknown_crc32 != 0 { v.push(self.unknown_crc32) }
+        if self.unknown_crc32 != 0 {
+            v.push(self.unknown_crc32)
+        }
         v
     }
 }

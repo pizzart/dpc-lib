@@ -5,7 +5,7 @@ use std::path::Path;
 use binwrite::BinWrite;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
-use nom_derive::{NomLE, Parse};
+use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::fuel_fmt::common::{write_option, FUELObjectFormatTrait, HasReferences};

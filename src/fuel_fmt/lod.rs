@@ -1,8 +1,10 @@
 use binwrite::BinWrite;
-use nom_derive::NomLE;
+use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::fuel_fmt::common::{write_option, FUELObjectFormat, HasReferences, ObjectZ, PascalArray, DynSphere, DynBox};
+use crate::fuel_fmt::common::{
+    write_option, DynBox, DynSphere, FUELObjectFormat, HasReferences, ObjectZ, PascalArray,
+};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
@@ -159,7 +161,9 @@ impl HasReferences for LodZ {
         if let Some(sound_entries1) = &self.sound_entries1 {
             v.append(&mut sound_entries1.data.iter().map(|x| x.sound_crc32).collect());
         }
-        if self.user_define_crc32 != 0 { v.push(self.user_define_crc32) }
+        if self.user_define_crc32 != 0 {
+            v.push(self.user_define_crc32)
+        }
         v
     }
 }

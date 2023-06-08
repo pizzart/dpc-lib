@@ -1,8 +1,11 @@
 use binwrite::BinWrite;
-use nom_derive::NomLE;
+use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::fuel_fmt::common::{FUELObjectFormat, FixedVec, HasReferences, Mat4f, ResourceObjectZ, Vec3f, Quat, SphereZ, Color, Rect};
+use crate::fuel_fmt::common::{
+    Color, FUELObjectFormat, FixedVec, HasReferences, Mat4f, Quat, Rect, ResourceObjectZ, SphereZ,
+    Vec3f,
+};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
@@ -66,16 +69,36 @@ impl HasReferences for NodeZ {
 
     fn soft_links(&self) -> Vec<u32> {
         let mut v = Vec::new();
-        if self.parent_crc32 != 0 { v.push(self.parent_crc32) }
-        if self.head_child_crc32 != 0 { v.push(self.head_child_crc32) }
-        if self.prev_node_crc32 != 0 { v.push(self.prev_node_crc32) }
-        if self.next_node_crc32 != 0 { v.push(self.next_node_crc32) }
-        if self.lod_crc32 != 0 { v.push(self.lod_crc32) }
-        if self.lod_data_crc32 != 0 { v.push(self.lod_data_crc32) }
-        if self.user_define_crc32 != 0 { v.push(self.user_define_crc32) }
-        if self.unknown7 != 0 { v.push(self.unknown7) }
-        if self.unknown8 != 0 { v.push(self.unknown8) }
-        if self.unknown9 != 0 { v.push(self.unknown9) }
+        if self.parent_crc32 != 0 {
+            v.push(self.parent_crc32)
+        }
+        if self.head_child_crc32 != 0 {
+            v.push(self.head_child_crc32)
+        }
+        if self.prev_node_crc32 != 0 {
+            v.push(self.prev_node_crc32)
+        }
+        if self.next_node_crc32 != 0 {
+            v.push(self.next_node_crc32)
+        }
+        if self.lod_crc32 != 0 {
+            v.push(self.lod_crc32)
+        }
+        if self.lod_data_crc32 != 0 {
+            v.push(self.lod_data_crc32)
+        }
+        if self.user_define_crc32 != 0 {
+            v.push(self.user_define_crc32)
+        }
+        if self.unknown7 != 0 {
+            v.push(self.unknown7)
+        }
+        if self.unknown8 != 0 {
+            v.push(self.unknown8)
+        }
+        if self.unknown9 != 0 {
+            v.push(self.unknown9)
+        }
         v
     }
 }

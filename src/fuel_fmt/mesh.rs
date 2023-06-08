@@ -1,11 +1,14 @@
-use std::io::Write;
+use ::nom::{count, IResult};
 use binwrite::{BinWrite, WriterOption};
-use nom::{count, IResult};
-use nom_derive::NomLE;
-use nom_derive::Parse;
+use nom_derive::*;
 use serde::{Deserialize, Serialize};
+use std::io::Write;
 
-use crate::fuel_fmt::common::{FUELObjectFormat, FixedVec, HasReferences, Mat4f, PascalArray, Quat, Vec3f, Vec4f, Vec2f, FadeDistances, RangeBeginEnd, RangeBeginSize, PascalString, NumeratorFloat, Vec3, VertexVectorComponent, DynSphere, DynBox};
+use crate::fuel_fmt::common::{
+    DynBox, DynSphere, FUELObjectFormat, FadeDistances, FixedVec, HasReferences, Mat4f,
+    NumeratorFloat, PascalArray, PascalString, Quat, RangeBeginEnd, RangeBeginSize, Vec2f, Vec3,
+    Vec3f, Vec4f, VertexVectorComponent,
+};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
@@ -131,21 +134,35 @@ impl VertexBufferData {
         match vertex_size {
             60 => {
                 let parse_result = count!(i, VertexLayout4Blend::parse, vertex_count)?;
-                Ok((parse_result.0, VertexBufferData::VertexLayout4BlendCase(parse_result.1)))
+                Ok((
+                    parse_result.0,
+                    VertexBufferData::VertexLayout4BlendCase(parse_result.1),
+                ))
             }
             48 => {
                 let parse_result = count!(i, VertexLayout1Blend::parse, vertex_count)?;
-                Ok((parse_result.0, VertexBufferData::VertexLayout1BlendCase(parse_result.1)))
+                Ok((
+                    parse_result.0,
+                    VertexBufferData::VertexLayout1BlendCase(parse_result.1),
+                ))
             }
             36 => {
                 let parse_result = count!(i, VertexLayoutNoBlend::parse, vertex_count)?;
-                Ok((parse_result.0, VertexBufferData::VertexLayoutNoBlendCase(parse_result.1)))
+                Ok((
+                    parse_result.0,
+                    VertexBufferData::VertexLayoutNoBlendCase(parse_result.1),
+                ))
             }
             12 => {
                 let parse_result = count!(i, VertexLayoutPosition::parse, vertex_count)?;
-                Ok((parse_result.0, VertexBufferData::VertexLayoutPositionCase(parse_result.1)))
+                Ok((
+                    parse_result.0,
+                    VertexBufferData::VertexLayoutPositionCase(parse_result.1),
+                ))
             }
-            _ => { panic!("Invalid vertex size") }
+            _ => {
+                panic!("Invalid vertex size")
+            }
         }
     }
 }
@@ -153,19 +170,23 @@ impl VertexBufferData {
 impl BinWrite for VertexBufferData {
     fn write<W: Write>(&self, writer: &mut W) -> std::io::Result<()> {
         match self {
-            VertexBufferData::VertexLayout4BlendCase(data) => { data.write(writer) }
-            VertexBufferData::VertexLayout1BlendCase(data) => { data.write(writer) }
-            VertexBufferData::VertexLayoutNoBlendCase(data) => { data.write(writer) }
-            VertexBufferData::VertexLayoutPositionCase(data) => { data.write(writer) }
+            VertexBufferData::VertexLayout4BlendCase(data) => data.write(writer),
+            VertexBufferData::VertexLayout1BlendCase(data) => data.write(writer),
+            VertexBufferData::VertexLayoutNoBlendCase(data) => data.write(writer),
+            VertexBufferData::VertexLayoutPositionCase(data) => data.write(writer),
         }
     }
 
-    fn write_options<W: Write>(&self, writer: &mut W, options: &WriterOption) -> std::io::Result<()> {
+    fn write_options<W: Write>(
+        &self,
+        writer: &mut W,
+        options: &WriterOption,
+    ) -> std::io::Result<()> {
         match self {
-            VertexBufferData::VertexLayout4BlendCase(data) => { data.write_options(writer, options) }
-            VertexBufferData::VertexLayout1BlendCase(data) => { data.write_options(writer, options) }
-            VertexBufferData::VertexLayoutNoBlendCase(data) => { data.write_options(writer, options) }
-            VertexBufferData::VertexLayoutPositionCase(data) => { data.write_options(writer, options) }
+            VertexBufferData::VertexLayout4BlendCase(data) => data.write_options(writer, options),
+            VertexBufferData::VertexLayout1BlendCase(data) => data.write_options(writer, options),
+            VertexBufferData::VertexLayoutNoBlendCase(data) => data.write_options(writer, options),
+            VertexBufferData::VertexLayoutPositionCase(data) => data.write_options(writer, options),
         }
     }
 }
@@ -180,7 +201,7 @@ struct VertexBufferExt {
     #[serde(skip)]
     vertex_size: u32,
     vertex_buffer_id: u32,
-    #[nom(Parse="{ |i| VertexBufferData::parse(i, vertex_size, vertex_count as usize) }")]
+    #[nom(Parse = "{ |i| VertexBufferData::parse(i, vertex_size, vertex_count as usize) }")]
     vertices: VertexBufferData,
 }
 
@@ -652,7 +673,7 @@ impl HasReferences for MeshZAltAltAlt {
             &self.material_crc32s0.data[..],
             &self.material_crc32s1.data[..],
         ]
-            .concat()
+        .concat()
     }
 
     fn soft_links(&self) -> Vec<u32> {
