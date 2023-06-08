@@ -8,9 +8,8 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use arcode::bitbit::{BitReader, BitWriter, LSB};
-use arcode::decode::decoder::ArithmeticDecoder;
-use arcode::encode::encoder::ArithmeticEncoder;
-use arcode::util::source_model_builder::{EOFKind, SourceModelBuilder};
+use arcode::model::{Builder, EOFKind};
+use arcode::{ArithmeticDecoder, ArithmeticEncoder};
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt, WriteBytesExt};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use itertools::Itertools;
@@ -629,7 +628,7 @@ impl LZ for ARITH {
         compressed_buffer: &Vec<u8>,
         decompressed_buffer: &mut Vec<u8>,
     ) -> Result<(), io::Error> {
-        let mut model = SourceModelBuilder::new()
+        let mut model = Builder::new()
             .num_symbols(256)
             .eof(EOFKind::EndAddOne)
             .build();
@@ -653,10 +652,7 @@ impl LZ for ARITH {
         decompressed_buffer: &mut Vec<u8>,
         compressed_buffer: &mut Vec<u8>,
     ) -> Result<(), io::Error> {
-        let mut model = SourceModelBuilder::new()
-            .num_bits(8)
-            .eof(EOFKind::EndAddOne)
-            .build();
+        let mut model = Builder::new().num_bits(8).eof(EOFKind::EndAddOne).build();
 
         let compressed = Cursor::new(compressed_buffer);
         let mut compressed_writer = BitWriter::new(compressed);

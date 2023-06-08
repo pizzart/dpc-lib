@@ -34,9 +34,9 @@ dependencies = [
 
 [[package]]
 name = "arcode"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cad65e2f616cb8be33e3fd87e7cb18d922ee3e307db71907e92c79116fb4878e"
+checksum = "7cf9ecf0f36fbecd0fd1be1eaa0b25fc67051d9a2f6b25892e6e6ebb7db629cb"
 dependencies = [
  "bitbit",
  "fenwick",

@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::io::{Cursor, ErrorKind};
 use std::io::{Error, Write};
 use std::path::Path;
@@ -8,7 +9,6 @@ use nom_derive::{NomLE, Parse};
 use serde::{Deserialize, Serialize};
 
 use crate::fuel_fmt::common::{write_option, FUELObjectFormatTrait, HasReferences};
-use crate::File;
 
 #[derive(BinWrite)]
 #[binwrite(little)]
