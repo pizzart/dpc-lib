@@ -4,9 +4,11 @@ use std::marker::PhantomData;
 use std::path::Path;
 use std::vec::Vec;
 
+// use ::nom::combinator::map;
+use ::nom::multi::length_count;
 pub use ::nom::number::complete::*;
-pub use ::nom::*;
 use binwrite::{BinWrite, WriterOption};
+// pub use nom::*;
 pub use nom_derive::*;
 use num_traits::{cast, NumCast};
 pub use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -164,7 +166,7 @@ where
 
 #[derive(NomLE)]
 pub struct PascalArray<T> {
-    #[nom(LengthCount(le_u32))]
+    #[nom(LengthCount(nom::number::complete::le_u32))]
     pub data: Vec<T>,
 }
 
@@ -214,7 +216,7 @@ where
 pub struct PascalString {
     #[nom(
         Map = "|x: Vec<u8>| String::from_utf8_lossy(&x[..]).to_string()",
-        Parse = "|i| length_count!(i, le_u32, le_u8)"
+        Parse = "|i| length_count(le_u32, le_u8)(i)"
     )]
     data: String,
 }
@@ -250,7 +252,7 @@ impl<'de> Deserialize<'de> for PascalString {
 pub struct PascalStringNULL {
     #[nom(
         Map = "|x: Vec<u8>| String::from_utf8_lossy(&x[0..x.len() - 1]).to_string()",
-        Parse = "|i| length_count!(i, le_u32, le_u8)"
+        Parse = "|i| length_count(le_u32, le_u8)(i)"
     )]
     data: String,
 }

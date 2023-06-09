@@ -17,7 +17,11 @@ use std::io::Write;
 use std::option::Option::Some;
 use std::path::Path;
 use std::path::PathBuf;
+use std::str::from_utf8;
 
+use ::nom::bytes::streaming::take;
+use ::nom::multi::length_count;
+use ::nom::number::complete::*;
 use binwrite::BinWrite;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use clap::{App, AppSettings, Arg};
@@ -25,9 +29,12 @@ use dialoguer::Select;
 use glob::{glob, GlobResult};
 use indicatif::ProgressBar;
 use itertools::Itertools;
-use nom::number::complete::*;
-use nom::*;
-use nom_derive::{Nom, NomLE, Parse};
+use nom::combinator::map_res;
+use nom::error::Error as NomError;
+use nom::multi::count;
+use nom::AsBytes;
+use nom::IResult;
+use nom_derive::*;
 use serde::Deserialize;
 use serde::Serialize;
 use tempdir::TempDir;
@@ -151,17 +158,17 @@ struct ReferenceRecord {
 struct PoolManifest {
     #[nom(Parse = "PoolManifestHeader::parse")]
     header: PoolManifestHeader,
-    #[nom(Parse = "{ |i| length_count!(i, le_u32, le_u32) }")]
+    #[nom(Parse = "{ |i| length_count(le_u32, le_u32)(i) }")]
     objects_crc32s: Vec<u32>,
-    #[nom(Parse = "{ |i| length_count!(i, le_u32, le_u32) }")]
+    #[nom(Parse = "{ |i| length_count(le_u32, le_u32)(i) }")]
     crc32s: Vec<u32>,
-    #[nom(Parse = "{ |i| length_count!(i, le_u32, le_u32) }")]
+    #[nom(Parse = "{ |i| length_count(le_u32, le_u32)(i) }")]
     reference_counts: Vec<u32>,
-    #[nom(Parse = "{ |i| length_count!(i, le_u32, le_u32) }")]
+    #[nom(Parse = "{ |i| length_count(le_u32, le_u32)(i) }")]
     object_padded_size: Vec<u32>,
-    #[nom(Parse = "{ |i| length_count!(i, le_u32, le_u32) }")]
+    #[nom(Parse = "{ |i| length_count(le_u32, le_u32)(i) }")]
     reference_records_indices: Vec<u32>,
-    #[nom(Parse = "{ |i| length_count!(i, le_u32, ReferenceRecord::parse) }")]
+    #[nom(Parse = "{ |i| length_count(le_u32, ReferenceRecord::parse)(i) }")]
     reference_records: Vec<ReferenceRecord>,
 }
 
@@ -176,12 +183,28 @@ struct BlockDescription {
     crc32: u32,
 }
 
-named_args!(take_c_string_as_str(size: usize)<&str>, do_parse!(
-    s: take_str!(size) >>
-    (s.trim_end_matches('\0'))
-));
+// named_args!(take_c_string_as_str(size: usize)<&str>, do_parse!(
+//     s: take_str!(size) >>
+//     (s.trim_end_matches('\0'))
+// ));
+fn take_c_string_as_str(i: &[u8], size: usize) -> IResult<&[u8], &str, nom::error::Error<&[u8]>> {
+    let map = map_res(take::<usize, &[u8], NomError<&[u8]>>(size), from_utf8)(i);
+    let res;
+    match map {
+        Ok(v) => {
+            let string = v.1.trim_end_matches('\0');
+            res = Ok((v.0, string))
+        }
+        Err(e) => res = Err(e),
+    }
+    res
+}
 
-named!(take_nothing_as_str<&str>, do_parse!(("")));
+// named!(take_nothing_as_str<&str>, do_parse!(("")));
+fn take_nothing_as_str(i: &[u8]) -> IResult<&[u8], &str, nom::error::Error<&[u8]>> {
+    // let l = (i, "");
+    Ok((i, ""))
+}
 
 #[derive(Serialize, NomLE, Clone, Debug, PartialEq, Eq)]
 struct PrimaryHeader<'a> {
@@ -294,8 +317,15 @@ impl DPC for FuelDPC {
             options: *options,
             unoptimized_pool: matches.is_present("UNOPTIMIZED-POOL"),
             no_pool: matches.is_present("NO-POOL"),
-            sound_sample_rate: matches.value_of("SOUND-SAMPLE-RATE").unwrap_or("44100").parse::<u32>().unwrap_or(44100),
-            effective_version_string: matches.value_of("EFFECTIVE-VERSION-STRING").unwrap_or("v1.381.67.09 - Asobo Studio - Internal Cross Technology").to_string(),
+            sound_sample_rate: matches
+                .value_of("SOUND-SAMPLE-RATE")
+                .unwrap_or("44100")
+                .parse::<u32>()
+                .unwrap_or(44100),
+            effective_version_string: matches
+                .value_of("EFFECTIVE-VERSION-STRING")
+                .unwrap_or("v1.381.67.09 - Asobo Studio - Internal Cross Technology")
+                .to_string(),
             version_lookup: version_lookup,
             version: String::from("v1.381.67.09 - Asobo Studio - Internal Cross Technology"),
         }
@@ -460,10 +490,8 @@ impl DPC for FuelDPC {
             let mut buff: Vec<u8> = vec![0; (block_description.padded_size) as usize];
             input_file.read(&mut buff)?;
 
-            let objects = match count!(
+            let objects = match count(BlockObject::parse, block_description.object_count as usize)(
                 buff.as_bytes(),
-                BlockObject::parse,
-                block_description.object_count as usize
             ) {
                 Ok((_, h)) => h,
                 Err(error) => panic!("{} on block {}", error, x),
@@ -508,9 +536,19 @@ impl DPC for FuelDPC {
                         objects_path.join(format!("{}.{}", object.header.crc32, x.as_str()));
 
                     let object_file_path = if !default_object_file_path.is_file() {
-                        let paths: Vec<GlobResult> = glob(objects_path.join(format!("{}_*.{}", object.header.crc32, x.as_str())).to_str().unwrap()).expect("Failed to read glob pattern").collect();
+                        let paths: Vec<GlobResult> = glob(
+                            objects_path
+                                .join(format!("{}_*.{}", object.header.crc32, x.as_str()))
+                                .to_str()
+                                .unwrap(),
+                        )
+                        .expect("Failed to read glob pattern")
+                        .collect();
                         if paths.len() > 1 {
-                            panic!("More than one named object for crc32: {}", object.header.crc32);
+                            panic!(
+                                "More than one named object for crc32: {}",
+                                object.header.crc32
+                            );
                         }
                         if paths.len() == 1 {
                             paths[0].as_ref().unwrap().clone()
@@ -639,11 +677,11 @@ impl DPC for FuelDPC {
             let mut bufff: Vec<u8> = vec![0; (end - cur) as usize];
             input_file.read(&mut bufff)?;
 
-            let pool_objects = match count!(
-                bufff.as_bytes(),
+            let pool_objects = match count(
                 PoolObject::parse,
-                pool_manifest.objects_crc32s.len() as usize
-            ) {
+                pool_manifest.objects_crc32s.len() as usize,
+            )(bufff.as_bytes())
+            {
                 Ok((_, h)) => h,
                 Err(error) => panic!("{}", error),
             };
@@ -665,9 +703,19 @@ impl DPC for FuelDPC {
                     objects_path.join(format!("{}.{}", pool_object.header.crc32, x.as_str()));
 
                 let object_file_path = if !default_object_file_path.is_file() {
-                    let paths: Vec<GlobResult> = glob(objects_path.join(format!("{}_*.{}", pool_object.header.crc32, x.as_str())).to_str().unwrap()).expect("Failed to read glob pattern").collect();
+                    let paths: Vec<GlobResult> = glob(
+                        objects_path
+                            .join(format!("{}_*.{}", pool_object.header.crc32, x.as_str()))
+                            .to_str()
+                            .unwrap(),
+                    )
+                    .expect("Failed to read glob pattern")
+                    .collect();
                     if paths.len() > 1 {
-                        panic!("More than one named object for crc32: {}", pool_object.header.crc32);
+                        panic!(
+                            "More than one named object for crc32: {}",
+                            pool_object.header.crc32
+                        );
                     }
                     if paths.len() == 1 {
                         paths[0].as_ref().unwrap().clone()
@@ -848,9 +896,10 @@ impl DPC for FuelDPC {
                     .split('_')
                     .next()
                     .unwrap()
-                    .parse::<u32>(){
+                    .parse::<u32>()
+                {
                     Err(_) => continue,
-                    Ok(x) => x
+                    Ok(x) => x,
                 };
                 if index.contains_key(&crc32) {
                     panic!("Ambiguous files for crc32 = {}", crc32);
@@ -869,11 +918,12 @@ impl DPC for FuelDPC {
         let (version_patch, version_minor, mut block_type) = self
             .version_lookup
             .get(&manifest_json.header.version_string)
-            .unwrap_or(
-                &(manifest_json.header.version_patch.unwrap_or(0),
-                  manifest_json.header.version_minor.unwrap_or(0),
-                  manifest_json.header.block_type.unwrap_or(0))
-            ).clone();
+            .unwrap_or(&(
+                manifest_json.header.version_patch.unwrap_or(0),
+                manifest_json.header.version_minor.unwrap_or(0),
+                manifest_json.header.block_type.unwrap_or(0),
+            ))
+            .clone();
 
         if version_patch == 0 && !self.options.is_unsafe {
             panic!("Invalid version string for fuel. Use -u/--unsafe to bypass this check and use the invalid string.");
@@ -1498,11 +1548,29 @@ impl DPC for FuelDPC {
             objects: Vec<DPCObjectHeader>,
         }
 
-        named_args!(parse_dpcblock(padding_size: usize, object_count: usize)<DPCBlock>, do_parse!(
-            objects: count!(DPCObjectHeader::parse, object_count) >>
-            take!(padding_size) >>
-            (DPCBlock { objects: objects })
-        ));
+        // named_args!(parse_dpcblock(padding_size: usize, object_count: usize)<DPCBlock>, do_parse!(
+        //     objects: count(DPCObjectHeader::parse, object_count) >>
+        //     take!(padding_size) >>
+        //     (DPCBlock { objects: objects })
+        // ));
+        fn parse_dpcblock(
+            i: &[u8],
+            padding_size: usize,
+            object_count: usize,
+        ) -> IResult<&[u8], DPCBlock, nom::error::Error<&[u8]>> {
+            let parse = map_res(
+                take::<usize, &[u8], NomError<&[u8]>>(padding_size),
+                count(DPCObjectHeader::parse, object_count),
+            )(i);
+            let result;
+            match parse {
+                Ok(obj) => {
+                    result = Ok((obj.1 .0, DPCBlock { objects: obj.1 .1 }));
+                }
+                Err(err) => result = Err(err),
+            }
+            result
+        }
 
         #[derive(Serialize, Nom, Clone, Debug, PartialEq, Eq)]
         struct DPCPool {
@@ -1629,11 +1697,21 @@ impl DPC for FuelDPC {
 
     fn split_object<P: AsRef<Path>>(&self, input_path: &P, output_path: &P) -> Result<()> {
         let mut header_path = output_path.as_ref().to_path_buf();
-        header_path.set_extension(header_path.extension().unwrap().to_str().unwrap().to_owned() + &".header".to_owned());
+        header_path.set_extension(
+            header_path
+                .extension()
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_owned()
+                + &".header".to_owned(),
+        );
         let mut header_file = File::create(header_path)?;
 
         let mut data_path = output_path.as_ref().to_path_buf();
-        data_path.set_extension(data_path.extension().unwrap().to_str().unwrap().to_owned() + &".data".to_owned());
+        data_path.set_extension(
+            data_path.extension().unwrap().to_str().unwrap().to_owned() + &".data".to_owned(),
+        );
         let mut data_file = File::create(data_path)?;
 
         let mut input_file = File::open(input_path)?;

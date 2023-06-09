@@ -1,4 +1,5 @@
-use ::nom::{count, IResult};
+use ::nom::multi::count;
+use ::nom::IResult;
 use binwrite::{BinWrite, WriterOption};
 use nom_derive::*;
 use serde::{Deserialize, Serialize};
@@ -133,28 +134,28 @@ impl VertexBufferData {
     fn parse(i: &[u8], vertex_size: u32, vertex_count: usize) -> IResult<&[u8], VertexBufferData> {
         match vertex_size {
             60 => {
-                let parse_result = count!(i, VertexLayout4Blend::parse, vertex_count)?;
+                let parse_result = count(VertexLayout4Blend::parse, vertex_count)(i)?;
                 Ok((
                     parse_result.0,
                     VertexBufferData::VertexLayout4BlendCase(parse_result.1),
                 ))
             }
             48 => {
-                let parse_result = count!(i, VertexLayout1Blend::parse, vertex_count)?;
+                let parse_result = count(VertexLayout1Blend::parse, vertex_count)(i)?;
                 Ok((
                     parse_result.0,
                     VertexBufferData::VertexLayout1BlendCase(parse_result.1),
                 ))
             }
             36 => {
-                let parse_result = count!(i, VertexLayoutNoBlend::parse, vertex_count)?;
+                let parse_result = count(VertexLayoutNoBlend::parse, vertex_count)(i)?;
                 Ok((
                     parse_result.0,
                     VertexBufferData::VertexLayoutNoBlendCase(parse_result.1),
                 ))
             }
             12 => {
-                let parse_result = count!(i, VertexLayoutPosition::parse, vertex_count)?;
+                let parse_result = count(VertexLayoutPosition::parse, vertex_count)(i)?;
                 Ok((
                     parse_result.0,
                     VertexBufferData::VertexLayoutPositionCase(parse_result.1),
