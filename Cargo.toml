@@ -1,7 +1,7 @@
 [package]
 name = "dpc"
-version = "0.1.5"
-authors = ["widberg <https://github.com/widberg>"]
+version = "0.1.6"
+authors = ["widberg <https://github.com/widberg>", "pizzart"]
 build = "build.rs"
 edition = "2018"
 
