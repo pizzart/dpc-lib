@@ -14,7 +14,6 @@ use std::io::Read;
 use std::io::Result;
 use std::io::SeekFrom;
 use std::io::Write;
-use std::ops::Deref;
 use std::option::Option::Some;
 use std::path::Path;
 use std::path::PathBuf;
@@ -1764,7 +1763,7 @@ impl DPC for WALLEDPC {
                 )?;
             } else {
                 input_file.read(&mut data)?;
-                // println!("{} {:?}", &object_header.class_crc32, data);
+                // println!("{:?} {:?}", header, data);
             }
 
             return walle_object_format.unpack(&header[..], &data[..], output_path.as_ref());

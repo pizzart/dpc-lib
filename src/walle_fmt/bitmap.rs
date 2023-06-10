@@ -4,13 +4,10 @@ use std::path::Path;
 use std::vec;
 
 use binwrite::BinWrite;
-use byteorder::ByteOrder;
-use byteorder::LittleEndian;
-use nom::combinator::complete;
 use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::walle_fmt::common::{write_option, HasReferences, WALLEObjectFormatTrait};
+use crate::walle_fmt::common::{HasReferences, WALLEObjectFormatTrait};
 use ddsfile::{D3DFormat, Dds};
 
 #[derive(BinWrite)]
@@ -53,6 +50,8 @@ struct BitmapZ {
     format: u8,
     mipmap_count: u8,
     four: u8,
+    #[nom(Count = "128")]
+    dds_header: Vec<u8>,
     #[nom(Count = "i.len()")]
     data: Vec<u8>,
 }
@@ -71,6 +70,16 @@ impl HasReferences for BitmapZ {
 struct BitmapObject {
     bitmap_header: BitmapZHeader,
     bitmap: BitmapZ,
+}
+
+impl HasReferences for BitmapObject {
+    fn hard_links(&self) -> Vec<u32> {
+        vec![]
+    }
+
+    fn soft_links(&self) -> Vec<u32> {
+        vec![]
+    }
 }
 
 pub struct BitmapObjectFormat;
@@ -103,6 +112,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormat {
         object.bitmap.width = dds.get_width();
         object.bitmap.height = dds.get_height();
 
+        object.bitmap.dds_header.clear();
         object.bitmap.data.clear();
         object.bitmap.write(body)?;
 
@@ -140,7 +150,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormat {
             bitmap.height,
             bitmap.width,
             None,
-            if bitmap.data[87] == 49 {
+            if bitmap.dds_header[87] == 49 {
                 D3DFormat::DXT1
             } else {
                 D3DFormat::DXT5

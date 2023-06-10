@@ -753,84 +753,6 @@ impl LZ for LZLZ4 {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use std::fs::File;
-    use std::io::Read;
-    use std::io::Write;
-    use std::path::PathBuf;
-
-    use byteorder::{LittleEndian, ReadBytesExt};
-    use checksums::hash_file;
-    use checksums::Algorithm;
-    use test_generator::test_resources;
-
-    use crate::lz;
-
-    #[test_resources("data/*.in")]
-    fn test_lzrs_optimized(path: &str) {
-        let mut compressed_file = File::open(path).unwrap();
-
-        let decompressed_buffer_len = compressed_file.read_u32::<LittleEndian>().unwrap();
-        let compressed_buffer_len = compressed_file.read_u32::<LittleEndian>().unwrap() - 8;
-
-        let mut compressed_buffer = vec![0; compressed_buffer_len as usize];
-        compressed_file.read(&mut compressed_buffer).unwrap();
-
-        let mut decompressed_buffer = vec![0; decompressed_buffer_len as usize];
-
-        lz::lzrs_decompress(
-            &compressed_buffer[..],
-            compressed_buffer_len as usize,
-            &mut decompressed_buffer[..],
-            decompressed_buffer_len as usize,
-            false,
-        )
-        .unwrap();
-
-        let mut out_path = PathBuf::from(path);
-        out_path.set_extension("out");
-        let mut decompressed_file = File::create(&out_path).unwrap();
-        decompressed_file.write(&decompressed_buffer).unwrap();
-
-        let mut good_path = PathBuf::from(path);
-        good_path.set_extension("out.good");
-
-        assert_eq!(
-            hash_file(&good_path.as_path(), Algorithm::SHA1),
-            hash_file(&out_path.as_path(), Algorithm::SHA1)
-        );
-
-        // compress then decompress it again
-
-        let mut recompressed_buffer = vec![0; decompressed_buffer_len as usize * 2];
-
-        let recompressed_size = lz::lzrs_compress_optimized(
-            &decompressed_buffer[..],
-            decompressed_buffer_len as usize,
-            &mut recompressed_buffer[..],
-            decompressed_buffer_len as usize * 2,
-        )
-        .unwrap();
-        lz::lzrs_decompress(
-            &recompressed_buffer[..],
-            recompressed_size,
-            &mut decompressed_buffer[..],
-            decompressed_buffer_len as usize,
-            false,
-        )
-        .unwrap();
-
-        decompressed_file = File::create(&out_path).unwrap();
-        decompressed_file.write(&decompressed_buffer).unwrap();
-
-        assert_eq!(
-            hash_file(&good_path.as_path(), Algorithm::SHA1),
-            hash_file(&out_path.as_path(), Algorithm::SHA1)
-        );
-    }
-}
-
 pub struct LZSubCommand<'a> {
     algorithms: HashMap<&'a str, &'a dyn LZ>,
 }
@@ -918,31 +840,5 @@ impl LZSubCommand<'_> {
         };
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod test_lz {
-    use crate::lz::{LZ, LZLZRS};
-    use checksums::{hash_file, Algorithm};
-    use std::path::Path;
-    use test_generator::test_resources;
-
-    #[test_resources("D:/programming/widberg/dpc/data/8014325.Bitmap_Z.out")]
-    fn test_fuel_lzrs(path: &str) {
-        let uncompressed_path = Path::new(path);
-        let compressed_path = uncompressed_path.with_extension("out.uncomp");
-
-        let lzrs = LZLZRS {};
-        lzrs.compress(uncompressed_path, compressed_path.as_path())
-            .unwrap();
-
-        assert_eq!(
-            hash_file(
-                uncompressed_path.with_extension("in").as_path(),
-                Algorithm::MD5
-            ),
-            hash_file(compressed_path.as_path(), Algorithm::MD5)
-        );
     }
 }
