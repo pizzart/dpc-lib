@@ -103,7 +103,7 @@ impl WALLEObjectFormatTrait for SoundObjectFormat {
             sample_rate: if sound_header.sample_rate != 0 {
                 sound_header.sample_rate
             } else {
-                44100
+                22050
             },
             bits_per_sample: 16,
             sample_format: hound::SampleFormat::Int,

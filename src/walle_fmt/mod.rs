@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::walle_fmt::animation::AnimationObjectFormat;
 use crate::walle_fmt::binary::BinaryObjectFormat;
-use crate::walle_fmt::bitmap::{BitmapObjectFormat, BitmapObjectFormatAlt};
+use crate::walle_fmt::bitmap::BitmapObjectFormat;
 use crate::walle_fmt::camera::CameraObjectFormat;
 use crate::walle_fmt::collisionvol::CollisionVolObjectType;
 use crate::walle_fmt::common::WALLEObjectFormatTrait;
@@ -111,68 +111,14 @@ pub fn get_formats<'a>(version: &String) -> HashMap<u32, &'a dyn WALLEObjectForm
     formats.insert(849267944, SoundObjectFormat::new());
 
     match version.as_str() {
-        "v1.381.67.09 - Asobo Studio - Internal Cross Technology" => {
-            formats.insert(2204276779, MaterialObjectFormat::new());
-            formats.insert(1387343541, MeshObjectFormat::new());
-            formats.insert(1396791303, SkinObjectFormat::new());
-            formats.insert(2245010728, NodeObjectFormat::new());
-            formats.insert(3312018398, ParticlesObjectFormat::new());
-            formats.insert(1943824915, LodObjectFormat::new());
-            formats.insert(1471281566, BitmapObjectFormat::new());
-        }
-        "v1.381.66.09 - Asobo Studio - Internal Cross Technology" => {
-            formats.insert(2204276779, MaterialObjectFormat::new());
-            formats.insert(1387343541, MeshObjectFormat::new());
-            formats.insert(1396791303, SkinObjectFormat::new());
-            formats.insert(2245010728, NodeObjectFormat::new());
-            formats.insert(3312018398, ParticlesObjectFormat::new());
-            formats.insert(1943824915, LodObjectFormat::new());
-            formats.insert(1471281566, BitmapObjectFormat::new());
-        }
-        "v1.381.65.09 - Asobo Studio - Internal Cross Technology" => {
-            formats.insert(2204276779, MaterialObjectFormat::new());
-            formats.insert(1387343541, MeshObjectFormatAlt::new());
-            formats.insert(1396791303, SkinObjectFormat::new());
-            formats.insert(2245010728, NodeObjectFormat::new());
-            formats.insert(3312018398, ParticlesObjectFormat::new());
-            formats.insert(1943824915, LodObjectFormat::new());
-            formats.insert(1471281566, BitmapObjectFormat::new());
-        }
-        "v1.381.64.09 - Asobo Studio - Internal Cross Technology" => {
-            formats.insert(2204276779, MaterialObjectFormat::new());
-            formats.insert(1387343541, MeshObjectFormatAlt::new());
-            formats.insert(1396791303, SkinObjectFormat::new());
-            formats.insert(2245010728, NodeObjectFormat::new());
-            formats.insert(3312018398, ParticlesObjectFormatAlt::new());
-            formats.insert(1943824915, LodObjectFormat::new());
-            formats.insert(1471281566, BitmapObjectFormat::new());
-        }
-        "v1.379.60.09 - Asobo Studio - Internal Cross Technology" => {
-            formats.insert(2204276779, MaterialObjectFormat::new());
-            formats.insert(1387343541, MeshObjectFormatAltAlt::new());
-            formats.insert(1396791303, SkinObjectFormat::new());
-            formats.insert(2245010728, NodeObjectFormat::new());
-            formats.insert(3312018398, ParticlesObjectFormatAlt::new());
-            formats.insert(1943824915, LodObjectFormatAltAlt::new());
-            formats.insert(1471281566, BitmapObjectFormatAlt::new());
-        }
-        "v1.325.50.07 - Asobo Studio - Internal Cross Technology" => {
+        "v1.291.03.06 - Asobo Studio - Internal Cross Technology" => {
             formats.insert(2204276779, MaterialObjectFormatAltAlt::new());
             formats.insert(1387343541, MeshObjectFormatAltAlt::new());
             formats.insert(1396791303, SkinObjectFormatAlt::new());
             formats.insert(2245010728, NodeObjectFormatAlt::new());
             formats.insert(3312018398, ParticlesObjectFormatAlt::new());
             formats.insert(1943824915, LodObjectFormatAlt::new());
-            formats.insert(1471281566, BitmapObjectFormatAlt::new());
-        }
-        "v1.220.50.07 - Asobo Studio - Internal Cross Technology" => {
-            formats.insert(2204276779, MaterialObjectFormatAlt::new());
-            formats.insert(1387343541, MeshObjectFormatAltAltAlt::new());
-            formats.insert(1396791303, SkinObjectFormatAlt::new());
-            formats.insert(2245010728, NodeObjectFormatAlt::new());
-            formats.insert(3312018398, ParticlesObjectFormatAlt::new());
-            formats.insert(1943824915, LodObjectFormatAlt::new());
-            formats.insert(1471281566, BitmapObjectFormatAlt::new());
+            formats.insert(1471281566, BitmapObjectFormat::new());
         }
         _ => panic!("bad version"),
     }

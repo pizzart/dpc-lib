@@ -14,6 +14,7 @@ use std::io::Read;
 use std::io::Result;
 use std::io::SeekFrom;
 use std::io::Write;
+use std::ops::Deref;
 use std::option::Option::Some;
 use std::path::Path;
 use std::path::PathBuf;
@@ -282,32 +283,12 @@ impl DPC for WALLEDPC {
 
         let mut version_lookup: HashMap<String, (u32, u32, u32)> = HashMap::new();
         version_lookup.insert(
-            String::from("v1.530.62.09 - Asobo Studio - Internal Cross Technology"),
-            (290, 529, 150),
-        );
-        version_lookup.insert(
-            String::from("v1.381.67.09 - Asobo Studio - Internal Cross Technology"),
-            (272, 380, 253),
-        );
-        version_lookup.insert(
-            String::from("v1.381.66.09 - Asobo Studio - Internal Cross Technology"),
-            (272, 380, 252),
-        );
-        version_lookup.insert(
-            String::from("v1.381.65.09 - Asobo Studio - Internal Cross Technology"),
-            (271, 380, 249),
-        );
-        version_lookup.insert(
-            String::from("v1.381.64.09 - Asobo Studio - Internal Cross Technology"),
-            (271, 380, 249),
-        );
-        version_lookup.insert(
-            String::from("v1.379.60.09 - Asobo Studio - Internal Cross Technology"),
-            (269, 380, 211),
-        );
-        version_lookup.insert(
             String::from("v1.325.50.07 - Asobo Studio - Internal Cross Technology"),
             (262, 326, 146),
+        );
+        version_lookup.insert(
+            String::from("v1.291.03.06 - Asobo Studio - Internal Cross Technology"),
+            (262, 292, 145),
         );
         version_lookup.insert(
             String::from("v1.220.50.07 - Asobo Studio - Internal Cross Technology"),
@@ -324,10 +305,10 @@ impl DPC for WALLEDPC {
                 .unwrap_or(22050),
             effective_version_string: matches
                 .value_of("EFFECTIVE-VERSION-STRING")
-                .unwrap_or("v1.381.67.09 - Asobo Studio - Internal Cross Technology")
+                .unwrap_or("v1.291.03.06 - Asobo Studio - Internal Cross Technology")
                 .to_string(),
             version_lookup: version_lookup,
-            version: String::from("v1.381.67.09 - Asobo Studio - Internal Cross Technology"),
+            version: String::from("v1.291.03.06 - Asobo Studio - Internal Cross Technology"),
         }
     }
 
@@ -1783,6 +1764,7 @@ impl DPC for WALLEDPC {
                 )?;
             } else {
                 input_file.read(&mut data)?;
+                // println!("{} {:?}", &object_header.class_crc32, data);
             }
 
             return walle_object_format.unpack(&header[..], &data[..], output_path.as_ref());

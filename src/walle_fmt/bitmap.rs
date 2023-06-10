@@ -1,10 +1,12 @@
 use std::fs::File;
 use std::io::{Error, ErrorKind, Write};
 use std::path::Path;
+use std::vec;
 
 use binwrite::BinWrite;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
+use nom::combinator::complete;
 use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
@@ -13,29 +15,16 @@ use ddsfile::{D3DFormat, Dds};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
-// https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dds-header
 #[derive(Serialize, Deserialize, NomLE)]
-#[nom(Exact)]
+#[nom(Exact, Debug)]
 struct BitmapZHeader {
-    friendly_name_crc32: u32,
-    dw_caps2: u16,
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    width: u32,
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    height: u32,
-    data_size: u32,
-    u1: u8,
-    bitmap_type: u8,
-    zero: u16,
-    u7: f32,
-    dxt_version0: u8,
-    mip_map_count: u8,
-    u2: u8,
-    u3: u8,
-    dxt_version1: u8,
-    u4: u8,
+    link_crc32: u32,
+    link_count: u32,
+    link1: u8,
+    link2: u8,
+    link3: u8,
+    link4: u8,
+    link5: u8,
 }
 
 impl HasReferences for BitmapZHeader {
@@ -48,58 +37,11 @@ impl HasReferences for BitmapZHeader {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-struct BitmapObject {
-    bitmap_header: BitmapZHeader,
-}
-
-impl HasReferences for BitmapObject {
-    fn hard_links(&self) -> Vec<u32> {
-        vec![]
-    }
-
-    fn soft_links(&self) -> Vec<u32> {
-        vec![]
-    }
-}
-
-// alternate
-
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
 #[nom(Exact)]
-struct BitmapZHeaderAlternate {
-    data_size: u32,
-    link_size: u32,
-    decomp_size: u32,
-    comp_size: u32,
-    class_crc32: u32,
-    name_crc32: u32,
-    link_crc32: u32,
-    link_count: u32,
-    link1: u8,
-    link2: u8,
-    link3: u8,
-    link4: u8,
-    link5: u8,
-}
-
-impl HasReferences for BitmapZHeaderAlternate {
-    fn hard_links(&self) -> Vec<u32> {
-        vec![]
-    }
-
-    fn soft_links(&self) -> Vec<u32> {
-        vec![]
-    }
-}
-
-#[derive(BinWrite)]
-#[binwrite(little)]
-#[derive(Serialize, Deserialize, NomLE)]
-#[nom(Exact)]
-struct BitmapZAlternate {
+struct BitmapZ {
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
     width: u32,
@@ -115,7 +57,7 @@ struct BitmapZAlternate {
     data: Vec<u8>,
 }
 
-impl HasReferences for BitmapZAlternate {
+impl HasReferences for BitmapZ {
     fn hard_links(&self) -> Vec<u32> {
         vec![]
     }
@@ -126,9 +68,9 @@ impl HasReferences for BitmapZAlternate {
 }
 
 #[derive(Serialize, Deserialize)]
-struct BitmapObjectAlternate {
-    bitmap_header: BitmapZHeaderAlternate,
-    bitmap: BitmapZAlternate,
+struct BitmapObject {
+    bitmap_header: BitmapZHeader,
+    bitmap: BitmapZ,
 }
 
 pub struct BitmapObjectFormat;
@@ -149,88 +91,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormat {
         let json_path = input_path.join("object.json");
         let json_file = File::open(json_path)?;
 
-        let dds_path = input_path.join("data.dds");
-        let mut dds_file = File::open(dds_path)?;
-
-        let dds = Dds::read(&mut dds_file).unwrap();
-
         let mut object: BitmapObject = serde_json::from_reader(json_file)?;
-        object.bitmap_header.width = dds.get_width();
-        object.bitmap_header.height = dds.get_height();
-        object.bitmap_header.write(header)?;
-        dds.data.write(body)?;
-
-        Ok((
-            object.bitmap_header.hard_links(),
-            object.bitmap_header.soft_links(),
-        ))
-    }
-
-    fn unpack(
-        self: &Self,
-        header: &[u8],
-        body: &[u8],
-        output_path: &Path,
-    ) -> Result<(Vec<u32>, Vec<u32>), Error> {
-        let json_path = output_path.join("object.json");
-        let mut output_file = File::create(json_path)?;
-
-        let bitmap_header = match BitmapZHeader::parse(&header) {
-            Ok((_, h)) => h,
-            Err(_) => return Err(Error::from(ErrorKind::Other)),
-        };
-
-        let dds_path = output_path.join("data.dds");
-        let mut output_dds_file = File::create(dds_path)?;
-
-        let mut dds = Dds::new_d3d(
-            bitmap_header.height,
-            bitmap_header.width,
-            None,
-            if bitmap_header.dxt_version1 == 14 {
-                D3DFormat::DXT1
-            } else {
-                D3DFormat::DXT5
-            },
-            Some(bitmap_header.mip_map_count as u32),
-            None,
-        )
-        .unwrap();
-
-        dds.data = Vec::from(body);
-
-        dds.write(&mut output_dds_file).unwrap();
-
-        let object = BitmapObject { bitmap_header };
-
-        output_file.write(serde_json::to_string_pretty(&object)?.as_bytes())?;
-
-        Ok((
-            object.bitmap_header.hard_links(),
-            object.bitmap_header.soft_links(),
-        ))
-    }
-}
-
-pub struct BitmapObjectFormatAlt;
-
-impl BitmapObjectFormatAlt {
-    pub fn new<'a>() -> &'a Self {
-        &Self {}
-    }
-}
-
-impl WALLEObjectFormatTrait for BitmapObjectFormatAlt {
-    fn pack(
-        self: &Self,
-        input_path: &Path,
-        header: &mut Vec<u8>,
-        body: &mut Vec<u8>,
-    ) -> Result<(Vec<u32>, Vec<u32>), Error> {
-        let json_path = input_path.join("object.json");
-        let json_file = File::open(json_path)?;
-
-        let mut object: BitmapObjectAlternate = serde_json::from_reader(json_file)?;
 
         object.bitmap_header.write(header)?;
 
@@ -262,12 +123,12 @@ impl WALLEObjectFormatTrait for BitmapObjectFormatAlt {
         let json_path = output_path.join("object.json");
         let mut output_file = File::create(json_path)?;
 
-        let bitmap_header = match BitmapZHeaderAlternate::parse(&header) {
+        let bitmap_header = match BitmapZHeader::parse(&header) {
             Ok((_, h)) => h,
             Err(_) => return Err(Error::from(ErrorKind::Other)),
         };
 
-        let bitmap = match BitmapZAlternate::parse(body) {
+        let bitmap = match BitmapZ::parse(body) {
             Ok((_, h)) => h,
             Err(_) => return Err(Error::from(ErrorKind::Other)),
         };
@@ -279,9 +140,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormatAlt {
             bitmap.height,
             bitmap.width,
             None,
-            if bitmap_header.dxt_version0 == 7 {
-                D3DFormat::A8L8
-            } else if bitmap_header.dxt_version0 == 14 {
+            if bitmap.data[87] == 49 {
                 D3DFormat::DXT1
             } else {
                 D3DFormat::DXT5
@@ -295,7 +154,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormatAlt {
 
         dds.write(&mut output_dds_file).unwrap();
 
-        let object = BitmapObjectAlternate {
+        let object = BitmapObject {
             bitmap_header,
             bitmap,
         };
