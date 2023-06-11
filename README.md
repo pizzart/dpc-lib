@@ -8,7 +8,7 @@ While the tool is named DPC it works with BigFiles from other platforms too.
 
 ## Supported Games/Versions
 
-All versions listed have full support. The bold versions are the version that the respective game is equipped to load. Unstable games are games that may be processed by the tool using the `--unsafe` option but do not have a dedicated DPC backend.
+The bold versions are the version that the respective game is equipped to load. Unstable games are games that may be partially processed.
 
 * Ratatouille (unstable)
 * WALL-E (mostly unstable)
