@@ -13,14 +13,10 @@ use crate::walle_fmt::gwroad::GwRoadObjectFormat;
 use crate::walle_fmt::lightdata::LightDataObjectFormat;
 use crate::walle_fmt::lod::{LodObjectFormat, LodObjectFormatAlt, LodObjectFormatAltAlt};
 use crate::walle_fmt::loddata::LodDataObjectFormat;
-use crate::walle_fmt::material::{
-    MaterialObjectFormat, MaterialObjectFormatAlt, MaterialObjectFormatAltAlt,
-};
+use crate::walle_fmt::material::MaterialObjectFormat;
 use crate::walle_fmt::materialanim::MaterialAnimObjectFormat;
 use crate::walle_fmt::materialobj::MaterialObjObjectFormat;
-use crate::walle_fmt::mesh::{
-    MeshObjectFormat, MeshObjectFormatAlt, MeshObjectFormatAltAlt, MeshObjectFormatAltAltAlt,
-};
+use crate::walle_fmt::mesh::MeshObjectFormat;
 use crate::walle_fmt::meshdata::MeshDataObjectFormat;
 use crate::walle_fmt::node::{NodeObjectFormat, NodeObjectFormatAlt};
 use crate::walle_fmt::omni::OmniObjectFormat;
@@ -30,7 +26,7 @@ use crate::walle_fmt::rotshape::RotShapeObjectFormat;
 use crate::walle_fmt::rotshapedata::RotShapeDataObjectFormat;
 use crate::walle_fmt::rtc::RtcObjectFormat;
 use crate::walle_fmt::skel::SkelObjectFormat;
-use crate::walle_fmt::skin::{SkinObjectFormat, SkinObjectFormatAlt};
+use crate::walle_fmt::skin::SkinObjectFormat;
 use crate::walle_fmt::sound::SoundObjectFormat;
 use crate::walle_fmt::spline::SplineObjectFormat;
 use crate::walle_fmt::splinegraph::SplineGraphObjectFormat;
@@ -112,6 +108,15 @@ pub fn get_formats<'a>(version: &String) -> HashMap<u32, &'a dyn WALLEObjectForm
 
     match version.as_str() {
         "v1.291.03.06 - Asobo Studio - Internal Cross Technology" => {
+            formats.insert(2204276779, MaterialObjectFormat::new());
+            formats.insert(1387343541, MeshObjectFormat::new());
+            formats.insert(1396791303, SkinObjectFormat::new());
+            formats.insert(2245010728, NodeObjectFormat::new());
+            formats.insert(3312018398, ParticlesObjectFormat::new());
+            formats.insert(1943824915, LodObjectFormat::new());
+            formats.insert(1471281566, BitmapObjectFormat::new());
+        }
+        "v1.291.03.07 - Asobo Studio - Internal Cross Technology" => {
             formats.insert(2204276779, MaterialObjectFormat::new());
             formats.insert(1387343541, MeshObjectFormat::new());
             formats.insert(1396791303, SkinObjectFormat::new());

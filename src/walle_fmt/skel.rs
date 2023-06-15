@@ -3,7 +3,8 @@ use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
 use crate::walle_fmt::common::{
-    HasReferences, Mat4f, PascalArray, Quat, ResourceObjectZ, Vec3f, Vec3i32, WALLEObjectFormat,
+    FixedVec, HasReferences, Mat4f, PascalArray, Quat, ResourceObjectZ, SphereZ, Vec3f, Vec3i32,
+    WALLEObjectFormat,
 };
 
 #[derive(BinWrite)]
@@ -11,73 +12,68 @@ use crate::walle_fmt::common::{
 #[derive(Serialize, Deserialize, NomLE)]
 struct SkelZBone {
     user_define_crc32: u32,
-    quat: Quat,
-    vec0: Vec3f,
+    local_rotation: Quat,
+    scale: Vec3f,
     bone_flags: u32,
-    vec1: Vec3f,
-    child_bone_begin: u32,
-    vec2: Vec3f,
-    some_mat_pro0: u32,
-    vec3: Vec3f,
-    some_mat_pro1: u32,
-    vec4: Vec3f,
-    some_mat_pro2: u32,
-    quat1: Quat,
-    vec5: Vec3i32,
-    parent_bone_ptr: u32,
-    vec6: Vec3i32,
-    some_bone_ptr: u32,
-    vec7: Vec3i32,
-    child_bone_ptr: u32,
-    transformation: Mat4f,
+    local_translation: Vec3f,
+    placeholder_child_ptr: u32,
+    model_rot_matrix_row1: Vec3f,
+    model_matrix_id: i16,
+    inverse_model_matrix_id: i16,
+    model_rot_matrix_row2: Vec3f,
+    placeholder_model_matrix_ptr: u32,
+    model_rot_matrix_row3: Vec3f,
+    placeholder_inverse_model_matrix_ptr: u32,
+    local_rotation_inverse: Quat,
+    unknown_ptr0s: FixedVec<u32, 3>,
+    placeholder_parent_ptr: u32,
+    unknown_ptr1s: FixedVec<u32, 3>,
+    placeholder_prev_sibling_ptr: u32,
+    unknown_ptr2s: FixedVec<u32, 3>,
+    placeholder_next_sibling_ptr: u32,
+    original_model_transform: Mat4f,
+    child_index: i32,
     parent_index: i32,
-    child_bones_index0: i32,
-    child_bones_index1: i32,
-    some_bone_index: i32,
+    next_sibling_index: i32,
+    prev_sibling_index: i32,
     bone_name: u32,
 }
 
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
-struct SkelZUnknown4 {
-    unknown0: u32,
-    unknown1: u32,
-    unknown2: u32,
-    unknown3: u32,
-    unknown4: u32,
-    unknown5: u32,
-    unknown6: u32,
+struct SphereColBone {
+    sphere: SphereZ,
+    flag: u32,
+    name_crc32: u32,
+    bone_node_crc32: u32,
 }
 
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
-struct SkelZUnknown2 {
+struct BoxColBone {
     mat: Mat4f,
-    unknown0: u32,
-    unknown1: u32,
-    unknown2: u32,
+    flag: u32,
+    name_crc32: u32,
+    bone_node_crc32: u32,
 }
 
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
-#[nom(Exact)]
+#[nom(Exact, Debug)]
 pub struct SkelZ {
-    u0: u32,
-    u1: f32,
-    u2: f32,
-    u3: f32,
-    u4: f32,
+    flag: u32,
+    sphere_local: SphereZ,
     bones: PascalArray<SkelZBone>,
     material_crc32s: PascalArray<u32>,
     mesh_data_crc32s: PascalArray<u32>,
-    unknown5s: PascalArray<PascalArray<u32>>,
-    unknown3: PascalArray<u32>,
-    unknown4s: PascalArray<SkelZUnknown4>,
-    unknown1s: PascalArray<SkelZUnknown4>,
-    unknown2s: PascalArray<SkelZUnknown2>,
+    bone_node_groups: PascalArray<PascalArray<u32>>,
+    unknown0s: PascalArray<u32>,
+    sphere_col_bones1: PascalArray<SphereColBone>,
+    sphere_col_bones2: PascalArray<SphereColBone>,
+    box_col_bones: PascalArray<BoxColBone>,
 }
 
 impl HasReferences for SkelZ {

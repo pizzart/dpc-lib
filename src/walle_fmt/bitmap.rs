@@ -7,21 +7,17 @@ use binwrite::BinWrite;
 use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::walle_fmt::common::{HasReferences, WALLEObjectFormatTrait};
+use crate::walle_fmt::common::{FixedVec, HasReferences, WALLEObjectFormatTrait};
 use ddsfile::{D3DFormat, Dds};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
-#[nom(Exact, Debug)]
+#[nom(Exact)]
 struct BitmapZHeader {
-    link_crc32: u32,
+    friendly_name_crc32: u32,
     link_count: u32,
-    link1: u8,
-    link2: u8,
-    link3: u8,
-    link4: u8,
-    link5: u8,
+    links: FixedVec<u8, 5>,
 }
 
 impl HasReferences for BitmapZHeader {
@@ -50,8 +46,8 @@ struct BitmapZ {
     format: u8,
     mipmap_count: u8,
     four: u8,
-    #[nom(Count = "128")]
-    dds_header: Vec<u8>,
+    // #[nom(Count = "128")]
+    // dds_header: Vec<u8>,
     #[nom(Count = "i.len()")]
     data: Vec<u8>,
 }
@@ -112,7 +108,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormat {
         object.bitmap.width = dds.get_width();
         object.bitmap.height = dds.get_height();
 
-        object.bitmap.dds_header.clear();
+        // object.bitmap.dds_header.clear();
         object.bitmap.data.clear();
         object.bitmap.write(body)?;
 
@@ -150,7 +146,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormat {
             bitmap.height,
             bitmap.width,
             None,
-            if bitmap.dds_header[87] == 49 {
+            if bitmap.data[87] == 49 {
                 D3DFormat::DXT1
             } else {
                 D3DFormat::DXT5
@@ -160,7 +156,7 @@ impl WALLEObjectFormatTrait for BitmapObjectFormat {
         )
         .unwrap();
 
-        dds.data = bitmap.data.clone();
+        dds.data = bitmap.data[128..].to_vec();
 
         dds.write(&mut output_dds_file).unwrap();
 

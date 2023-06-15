@@ -498,12 +498,12 @@ where
 
         let header = match T::parse(&header) {
             Ok((_, h)) => h,
-            Err(_) => return Err(Error::from(ErrorKind::Other)),
+            Err(e) => return Err(Error::from(ErrorKind::Other)),
         };
 
         let body = match U::parse(&body) {
             Ok((_, h)) => h,
-            Err(_) => return Err(Error::from(ErrorKind::Other)),
+            Err(e) => return Err(Error::from(ErrorKind::Other)),
         };
 
         #[derive(Serialize, Deserialize)]

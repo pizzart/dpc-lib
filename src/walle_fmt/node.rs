@@ -16,26 +16,36 @@ pub struct NodeZ {
     head_child_crc32: u32,
     prev_node_crc32: u32,
     next_node_crc32: u32,
-    lod_crc32: u32,
-    lod_data_crc32: u32,
+    object_crc32: u32,
     user_define_crc32: u32,
-    unknown7: u32,
-    unknown8: u32,
-    unknown9: u32,
-    rotation: Quat,
+    light_data_crc32: u32,
+    bitmap_crc32: u32,
+    unknown_crc32: u32,
+    inverse_world_transform: Mat4f,
+    unknown1: Vec3f,
+    collide_seads_id0: u32,
+    unknown2: Vec3f,
+    placeholder_world_matrix_ptr: u32,
+    unknown3: Vec3f,
+    display_seads_id0: u32,
+    unknown4: Mat4f,
     translation: Vec3f,
     flags: u32,
-    rotation2: Quat,
+    rotation: Quat,
     scale: f32,
-    scale2: f32,
-    reciprocal_scale: f32,
-    unknown10: f32,
+    other_scale: f32,
+    one_over_scale: f32,
+    unknown5: f32,
     color: Color,
     sphere: SphereZ,
-    display_seeds_rect: Rect,
-    collide_seeds_rect: Rect,
-    negative_four: i16,
+    display_seads_rect: Rect,
+    collide_seads_rect: Rect,
     world_transform: Mat4f,
+    collide_seads_id1: u32,
+    display_seads_id1: u32,
+    unknown6: i16,
+    unknown7: u32,
+    unknown8: u32,
 }
 
 #[derive(BinWrite)]
@@ -81,23 +91,20 @@ impl HasReferences for NodeZ {
         if self.next_node_crc32 != 0 {
             v.push(self.next_node_crc32)
         }
-        if self.lod_crc32 != 0 {
-            v.push(self.lod_crc32)
-        }
-        if self.lod_data_crc32 != 0 {
-            v.push(self.lod_data_crc32)
+        if self.object_crc32 != 0 {
+            v.push(self.object_crc32)
         }
         if self.user_define_crc32 != 0 {
             v.push(self.user_define_crc32)
         }
-        if self.unknown7 != 0 {
-            v.push(self.unknown7)
+        if self.light_data_crc32 != 0 {
+            v.push(self.light_data_crc32)
         }
-        if self.unknown8 != 0 {
-            v.push(self.unknown8)
+        if self.bitmap_crc32 != 0 {
+            v.push(self.bitmap_crc32)
         }
-        if self.unknown9 != 0 {
-            v.push(self.unknown9)
+        if self.unknown_crc32 != 0 {
+            v.push(self.unknown_crc32)
         }
         v
     }

@@ -2,18 +2,15 @@ use binwrite::BinWrite;
 use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::walle_fmt::common::{HasReferences, ResourceObjectZ, WALLEObjectFormat};
+use crate::walle_fmt::common::{Color, HasReferences, ResourceObjectZ, WALLEObjectFormat};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
 #[nom(Exact)]
 pub struct MeshDataZ {
-    not_traffic_tm_or_p_moto: u32,
-    zero0: u32,
-    zero1: u32,
-    zero2: u32,
-    zero3: u32,
+    unknown0: f32,
+    color: Color,
 }
 
 impl HasReferences for MeshDataZ {

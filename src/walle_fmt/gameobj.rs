@@ -2,25 +2,14 @@ use binwrite::BinWrite;
 use nom_derive::*;
 use serde::{Deserialize, Serialize};
 
-use crate::walle_fmt::common::{
-    HasReferences, PascalArray, PascalStringNULL, ResourceObjectZ, WALLEObjectFormat,
-};
-
-#[derive(BinWrite)]
-#[binwrite(little)]
-#[derive(Serialize, Deserialize, NomLE)]
-struct GameObjZChild {
-    string: PascalStringNULL,
-    is_in_world: u32,
-    crc32s: PascalArray<u32>,
-}
+use crate::walle_fmt::common::{HasReferences, PascalArray, ResourceObjectZ, WALLEObjectFormat};
 
 #[derive(BinWrite)]
 #[binwrite(little)]
 #[derive(Serialize, Deserialize, NomLE)]
 #[nom(Exact)]
 pub struct GameObjZ {
-    children: PascalArray<GameObjZChild>,
+    node_crc32s: PascalArray<u32>,
 }
 
 impl HasReferences for GameObjZ {
@@ -30,8 +19,8 @@ impl HasReferences for GameObjZ {
 
     fn soft_links(&self) -> Vec<u32> {
         let mut v = Vec::new();
-        for child in self.children.data.iter() {
-            v.append(&mut child.crc32s.data.clone());
+        for node in self.node_crc32s.data.iter() {
+            v.push(node.to_owned());
         }
         v
     }

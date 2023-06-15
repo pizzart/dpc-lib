@@ -285,10 +285,10 @@ impl DPC for WALLEDPC {
             String::from("v1.325.50.07 - Asobo Studio - Internal Cross Technology"),
             (262, 326, 146),
         );
-        version_lookup.insert(
-            String::from("v1.291.03.06 - Asobo Studio - Internal Cross Technology"),
-            (262, 292, 145),
-        );
+        // version_lookup.insert(
+        //     String::from("v1.291.03.06 - Asobo Studio - Internal Cross Technology"),
+        //     (291, 298, 169),
+        // );
         version_lookup.insert(
             String::from("v1.220.50.07 - Asobo Studio - Internal Cross Technology"),
             (262, 221, 144),
@@ -1862,7 +1862,7 @@ impl DPC for WALLEDPC {
                 }
 
                 if !self.options.is_quiet {
-                    println!("Warn: object parser failed {}", crc32);
+                    println!("Warn: object parser failed {} {:?}", crc32, res);
                 }
             }
 
