@@ -34,6 +34,10 @@ tempdir = "0.3.7"
 test-generator = "0.3.0"
 wild = "2.0.4"
 zerocopy = "0.5.0"
+gltf = "1.2.0"
+three-d-asset = "0.5.0"
+tri-mesh = "0.6.0"
+obj = "0.10.2"
 
 [build-dependencies]
 built = { version = "0.5.1", features = ["git2"] }
